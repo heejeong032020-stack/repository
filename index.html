@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>우리반 공룡 성장 프로젝트 🦖</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Pretendard:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 50%, #fefce8 100%);
+      min-height: 100vh;
+    }
+    .font-title {
+      font-family: 'Jua', sans-serif;
+    }
+    @keyframes floatDino {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    .dino-float {
+      animation: floatDino 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="text-slate-800 pb-16">
+
+  <!-- 상단 헤더 -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-emerald-100 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-2xl shadow-md">
+          🦖
+        </div>
+        <div>
+          <h1 class="font-title text-2xl sm:text-3xl text-emerald-800 tracking-wide">우리반 공룡 성장 프로젝트</h1>
+          <p class="text-xs sm:text-sm text-slate-500 font-medium">줄넘기 20분 또는 달리기 3바퀴마다 공룡이 1단계씩 쑥쑥 자라요!</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="syncStatusBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          시트 연결 중...
+        </span>
+        <button id="refreshBtn" onclick="fetchSheetData()" class="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs sm:text-sm border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer">
+          <span>🔄</span> 새로고침
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 pt-6 space-y-8">
+
+    <!-- 상단 요약 & 운동 기록 입력 폼 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 왼쪽: 운동 기록 입력 카드 -->
+      <section class="lg:col-span-5 bg-white rounded-3xl p-6 shadow-md border border-emerald-100">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-title text-xl text-slate-800 flex items-center gap-2">
+            <span>🏃‍♂️</span> 오늘의 운동 기록하기
+          </h2>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">1회 최대 +1단계</span>
+        </div>
+
+        <form id="exerciseForm" class="space-y-4">
+          <div>
+            <label for="studentSelect" class="block text-sm font-bold text-slate-700 mb-1.5">학생 이름</label>
+            <select id="studentSelect" required class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none font-semibold text-slate-800 transition">
+              <option value="">학생 명단 불러오는 중...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1.5">운동 종목</label>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="cursor-pointer">
+                <input type="radio" name="exerciseType" value="줄넘기" class="peer sr-only" checked onchange="updateUnitLabel()" />
+                <div class="p-3 rounded-xl border-2 border-slate-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 text-center transition">
+                  <div class="text-2xl mb-1">🪢</div>
+                  <div class="font-bold text-sm text-slate-800">줄넘기</div>
+                  <div class="text-xs text-emerald-600 font-semibold mt-0.5">목표: 20분 이상</div>
+                </div>
+              </label>
+
+              <label class="cursor-pointer">
+                <input type="radio" name="exerciseType" value="달리기" class="peer sr-only" onchange="updateUnitLabel()" />
+                <div class="p-3 rounded-xl border-2 border-slate-200 peer-checked:border-sky-500 peer-checked:bg-sky-50 text-center transition">
+                  <div class="text-2xl mb-1">👟</div>
+                  <div class="font-bold text-sm text-slate-800">달리기</div>
+                  <div class="text-xs text-sky-600 font-semibold mt-0.5">목표: 3바퀴 이상</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label for="amountInput" class="block text-sm font-bold text-slate-700 mb-1.5">
+              운동량 (<span id="unitLabel" class="text-emerald-600">분</span>)
+            </label>
+            <div class="relative">
+              <input type="number" id="amountInput" min="1" step="1" required placeholder="예: 20"
+                class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none font-bold text-lg text-slate-800 transition" />
+              <span id="unitSuffix" class="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">분</span>
+            </div>
+            <p id="goalHint" class="text-xs text-slate-500 mt-1.5">💡 20분 이상 기록 시 공룡이 1단계 성장합니다! (40분을 해도 1회당 최대 1단계 상승)</p>
+          </div>
+
+          <div>
+            <label for="noteInput" class="block text-sm font-bold text-slate-700 mb-1.5">한마디 / 비고 <span class="text-slate-400 font-normal">(선택)</span></label>
+            <input type="text" id="noteInput" placeholder="예: 쉬지 않고 20분 성공!"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-emerald-500 outline-none text-sm text-slate-800 transition" />
+          </div>
+
+          <button type="submit" id="submitBtn"
+            class="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-emerald-200 transition cursor-pointer flex items-center justify-center gap-2">
+            <span>🥚</span> 운동 기록 저장하고 공룡 키우기
+          </button>
+        </form>
+      </section>
+
+      <!-- 오른쪽: 단계 안내 및 최근 운동 피드 -->
+      <section class="lg:col-span-7 flex flex-col gap-6">
+        <div class="bg-white rounded-3xl p-5 shadow-md border border-emerald-100">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-title text-lg text-slate-800">🦕 공룡 성장 5단계 도감</h2>
+            <span class="text-xs text-slate-500 font-semibold">목표 달성 1회 = +1단계</span>
+          </div>
+          <div class="grid grid-cols-5 gap-2 text-center">
+            <div class="p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+              <div class="text-2xl sm:text-3xl mb-1">🥚</div>
+              <div class="text-xs font-extrabold text-slate-700">1단계</div>
+              <div class="text-[11px] text-slate-500">신비한 알</div>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-lime-50 border border-lime-100">
+              <div class="text-2xl sm:text-3xl mb-1">🐣</div>
+              <div class="text-xs font-extrabold text-lime-700">2단계</div>
+              <div class="text-[11px] text-lime-600">아기 공룡</div>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-100">
+              <div class="text-2xl sm:text-3xl mb-1">🦕</div>
+              <div class="text-xs font-extrabold text-emerald-700">3단계</div>
+              <div class="text-[11px] text-emerald-600">어린이 공룡</div>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-teal-50 border border-teal-100">
+              <div class="text-2xl sm:text-3xl mb-1">🦖</div>
+              <div class="text-xs font-extrabold text-teal-700">4단계</div>
+              <div class="text-[11px] text-teal-600">청소년 공룡</div>
+            </div>
+            <div class="p-2.5 rounded-2xl bg-amber-50 border border-amber-200">
+              <div class="text-2xl sm:text-3xl mb-1">👑🦖</div>
+              <div class="text-xs font-extrabold text-amber-700">5단계</div>
+              <div class="text-[11px] text-amber-600">전설의 왕공룡</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 최근 운동 기록 피드 -->
+        <div class="bg-white rounded-3xl p-5 shadow-md border border-emerald-100 flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-title text-lg text-slate-800 flex items-center gap-2">
+              <span>📋</span> 최근 운동 기록 피드
+            </h2>
+            <span id="totalLogsCount" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">총 0건</span>
+          </div>
+          <div id="recentLogsList" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+            <div class="text-center py-8 text-sm text-slate-400">구글 시트에서 기록을 불러오는 중입니다...</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 하단: 우리반 공룡 성장 현황판 -->
+    <section class="bg-white rounded-3xl p-6 shadow-md border border-emerald-100">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+          <h2 class="font-title text-2xl text-slate-800 flex items-center gap-2">
+            <span>🌿</span> 우리반 공룡 성장 현황판
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">학생 카드를 클릭하면 위 입력창에 이름이 자동으로 선택됩니다.</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="studentCountBadge" class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">
+            전체 0명
+          </span>
+        </div>
+      </div>
+
+      <div id="studentBoardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 알림 토스트 -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-slate-900 text-white text-sm font-bold shadow-xl opacity-0 pointer-events-none transition-all duration-300"></div>
+
+  <script>
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx8e-TO7tcnQPMgNAcAQ_2pljMPMzkCm6LK9BrMMYn-wP5pkGlOgrJM9YvguXJkW7Vl/exec';
+
+    let studentsData = [];
+    let recentLogsData = [];
+
+    const DINO_STAGES = {
+      1: { emoji: '🥚', name: '신비한 알', bg: 'bg-slate-50', border: 'border-slate-200', badge: 'bg-slate-200 text-slate-700', bar: 'bg-slate-400' },
+      2: { emoji: '🐣', name: '아기 공룡', bg: 'bg-lime-50/70', border: 'border-lime-200', badge: 'bg-lime-200 text-lime-800', bar: 'bg-lime-500' },
+      3: { emoji: '🦕', name: '어린이 공룡', bg: 'bg-emerald-50/80', border: 'border-emerald-200', badge: 'bg-emerald-200 text-emerald-800', bar: 'bg-emerald-500' },
+      4: { emoji: '🦖', name: '청소년 공룡', bg: 'bg-teal-50/80', border: 'border-teal-200', badge: 'bg-teal-200 text-teal-800', bar: 'bg-teal-500' },
+      5: { emoji: '👑🦖', name: '전설의 왕공룡', bg: 'bg-amber-50', border: 'border-amber-300', badge: 'bg-amber-200 text-amber-900', bar: 'bg-amber-500' }
+    };
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-white text-sm font-bold shadow-xl transition-all duration-300 ${
+        isError ? 'bg-rose-600' : 'bg-emerald-700'
+      } opacity-100 translate-y-0`;
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-2');
+      }, 3200);
+    }
+
+    function updateUnitLabel() {
+      const selectedType = document.querySelector('input[name="exerciseType"]:checked').value;
+      const unitLabel = document.getElementById('unitLabel');
+      const unitSuffix = document.getElementById('unitSuffix');
+      const amountInput = document.getElementById('amountInput');
+      const goalHint = document.getElementById('goalHint');
+
+      if (selectedType === '줄넘기') {
+        unitLabel.textContent = '분';
+        unitSuffix.textContent = '분';
+        amountInput.placeholder = '예: 20';
+        goalHint.textContent = '💡 20분 이상 기록 시 공룡이 1단계 성장합니다! (40분을 해도 1회당 최대 1단계 상승)';
+      } else {
+        unitLabel.textContent = '바퀴';
+        unitSuffix.textContent = '바퀴';
+        amountInput.placeholder = '예: 3';
+        goalHint.textContent = '💡 3바퀴 이상 기록 시 공룡이 1단계 성장합니다! (6바퀴를 해도 1회당 최대 1단계 상승)';
+      }
+    }
+
+    function setSyncStatus(status, text) {
+      const badge = document.getElementById('syncStatusBadge');
+      if (status === 'loading') {
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> ${text}`;
+      } else if (status === 'connected') {
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> ${text}`;
+      } else {
+        badge.className = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> ${text}`;
+      }
+    }
+
+    async function fetchSheetData() {
+      setSyncStatus('loading', '구글 시트 동기화 중...');
+      const selectEl = document.getElementById('studentSelect');
+
+      try {
+        const response = await fetch(APPS_SCRIPT_URL);
+        if (!response.ok) {
+          throw new Error(`HTTP 오류 (${response.status})`);
+        }
+
+        const rawText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (parseErr) {
+          throw new Error('응답이 JSON 형식이 아닙니다. 웹 앱 배포 권한을 확인해 주세요.');
+        }
+
+        if (data.status === 'error') {
+          throw new Error(data.message || 'Apps Script 내부 오류');
+        }
+
+        // Apps Script의 studentSummaries와 records 배열을 우선 매핑
+        const rawStudents = Array.isArray(data.studentSummaries) && data.studentSummaries.length > 0
+          ? data.studentSummaries
+          : (Array.isArray(data.students) ? data.students : []);
+
+        studentsData = rawStudents.map(s => ({
+          number: s.number,
+          name: s.name,
+          level: Number(s.stage || s.level || 1),
+          clears: Number(s.earnedLevels || s.clears || 0),
+          laps: Math.max(0, Number(s.laps || 0)),
+          minutes: Math.max(0, Number(s.minutes || 0))
+        }));
+
+        recentLogsData = Array.isArray(data.records)
+          ? data.records
+          : (Array.isArray(data.recentLogs) ? data.recentLogs : []);
+
+        renderStudentDropdown(studentsData);
+        renderStudentBoard(studentsData);
+        renderRecentLogs(recentLogsData, recentLogsData.length);
+
+        setSyncStatus('connected', `시트 연결됨 (${studentsData.length}명)`);
+      } catch (err) {
+        console.error('시트 데이터 불러오기 실패:', err);
+        setSyncStatus('error', '연결 실패');
+        selectEl.innerHTML = `<option value="">⚠️ 학생 이름 불러오기 실패 (${err.message})</option>`;
+        showToast(`불러오기 실패: ${err.message}`, true);
+      }
+    }
+
+    function renderStudentDropdown(students) {
+      const selectEl = document.getElementById('studentSelect');
+      const prevSelected = selectEl.value;
+
+      if (!students || students.length === 0) {
+        selectEl.innerHTML = '<option value="">등록된 학생 명단이 없습니다</option>';
+        return;
+      }
+
+      selectEl.innerHTML = '<option value="">-- 학생 이름을 선택하세요 --</option>' +
+        students.map(s => {
+          const numText = s.number ? `${s.number}번 ` : '';
+          return `<option value="${s.name}">${numText}${s.name} (Lv.${s.level || 1})</option>`;
+        }).join('');
+
+      if (prevSelected && students.some(s => s.name === prevSelected)) {
+        selectEl.value = prevSelected;
+      }
+    }
+
+    function renderStudentBoard(students) {
+      const gridEl = document.getElementById('studentBoardGrid');
+      const countBadge = document.getElementById('studentCountBadge');
+      countBadge.textContent = `전체 ${students.length}명`;
+
+      if (!students || students.length === 0) {
+        gridEl.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">표시할 학생 데이터가 없습니다.</div>';
+        return;
+      }
+
+      gridEl.innerHTML = students.map(student => {
+        const level = Math.min(5, Math.max(1, Number(student.level) || 1));
+        const info = DINO_STAGES[level];
+        const progressPercent = (level / 5) * 100;
+        const safeName = String(student.name).replace(/'/g, "\\'");
+
+        return `
+          <div onclick="selectStudentCard('${safeName}')"
+               class="cursor-pointer rounded-2xl p-4 border-2 ${info.border} ${info.bg} hover:shadow-md hover:-translate-y-0.5 transition flex flex-col items-center text-center relative group">
+            <div class="w-full flex items-center justify-between text-[11px] font-bold text-slate-500 mb-1">
+              <span>${student.number ? student.number + '번' : '학생'}</span>
+              <span class="px-2 py-0.5 rounded-full ${info.badge}">Lv.${level}</span>
+            </div>
+
+            <div class="text-4xl my-2 dino-float select-none">${info.emoji}</div>
+
+            <div class="font-extrabold text-base text-slate-800">${student.name}</div>
+            <div class="text-xs font-semibold text-slate-500 mb-2.5">${info.name}</div>
+
+            <div class="w-full bg-white/80 h-2 rounded-full overflow-hidden border border-slate-200/60">
+              <div class="${info.bar} h-full rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1.5 font-medium">
+              목표 달성 ${student.clears || 0}회
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRecentLogs(logs, totalCount) {
+      const listEl = document.getElementById('recentLogsList');
+      const countEl = document.getElementById('totalLogsCount');
+      countEl.textContent = `총 ${totalCount}건`;
+
+      if (!logs || logs.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-8 text-sm text-slate-400">아직 기록된 운동 내역이 없습니다. 첫 기록을 남겨보세요!</div>';
+        return;
+      }
+
+      listEl.innerHTML = logs.map(log => {
+        const isJumpRope = log.type === '줄넘기';
+        const unit = isJumpRope ? '분' : '바퀴';
+        const icon = isJumpRope ? '🪢' : '👟';
+        const rawAmount = Number(log.amount);
+        const displayAmount = rawAmount < 0 ? '서식오류(시트확인)' : `${rawAmount}${unit}`;
+        const badgeHtml = log.levelUp
+          ? '<span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">+1단계 성장! 🎉</span>'
+          : '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[11px] font-semibold">목표 미달</span>';
+
+        return `
+          <div class="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-lg shrink-0">
+                ${icon}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-extrabold text-sm text-slate-800">${log.name}</span>
+                  <span class="text-xs font-bold text-slate-600">${log.type} ${displayAmount}</span>
+                  ${badgeHtml}
+                </div>
+                <div class="text-xs text-slate-400 truncate mt-0.5">
+                  ${log.time || ''} ${log.note ? '· ' + log.note : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectStudentCard(name) {
+      const selectEl = document.getElementById('studentSelect');
+      selectEl.value = name;
+      selectEl.focus();
+      showToast(`'${name}' 학생이 선택되었습니다.`);
+    }
+
+    document.getElementById('exerciseForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('studentSelect').value;
+      const type = document.querySelector('input[name="exerciseType"]:checked').value;
+      const amount = Number(document.getElementById('amountInput').value);
+      const note = document.getElementById('noteInput').value.trim();
+
+      if (!name) {
+        showToast('학생 이름을 선택해 주세요!', true);
+        return;
+      }
+      if (!amount || amount <= 0) {
+        showToast('올바른 운동량을 입력해 주세요!', true);
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      const originalBtnHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>⏳</span> 구글 시트에 저장 중...';
+
+      try {
+        const payload = { name, type, amount, note };
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`저장 실패 (${response.status})`);
+        }
+
+        const result = await response.json();
+        if (result.status === 'error') {
+          throw new Error(result.message || '저장 중 오류가 발생했습니다.');
+        }
+
+        document.getElementById('amountInput').value = '';
+        document.getElementById('noteInput').value = '';
+
+        const newStage = result.newStage || result.newLevel;
+        if (result.levelUp) {
+          showToast(`🎉 ${name} 학생의 공룡이 성장했습니다!${newStage ? ` (현재 Lv.${newStage})` : ''}`);
+        } else {
+          showToast(`✅ ${name} 학생의 운동 기록이 저장되었습니다!`);
+        }
+
+        await fetchSheetData();
+      } catch (err) {
+        console.error('기록 저장 오류:', err);
+        showToast(`저장 오류: ${err.message}`, true);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', fetchSheetData);
+  </script>
+</body>
+</html>
